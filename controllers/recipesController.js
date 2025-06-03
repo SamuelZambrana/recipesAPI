@@ -1,4 +1,5 @@
 const recipeModel = require('../models/recipesModel');
+const userModel = require('../models/userModel')
 const mongoose = require('mongoose');
 
 const addRecipe = async (req, res) => {
@@ -91,12 +92,130 @@ const getPopularRecipe = async (req, res) => {
   }
 };
 
+const addRecipes = async (req, res) => {
+  try {
+    const idUser = req.payload._id;
+
+    // Buscar usuario
+    const user = await userModel.findById(idUser);
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // Verificar si el usuario es administrador
+    if (user.role !== "admin") {
+      return res.status(403).json({ message: "Acceso denegado: Solo los administradores pueden agregar recetas" });
+    }
+
+    const { title, description, ingredients, category, imageURL } = req.body;
+
+    // Validar que los datos sean correctos
+    if (!title || !description || !ingredients || !category || !imageURL) {
+      return res.status(400).json({ message: "Todos los campos son obligatorios" });
+    }
+
+    // Crear nueva receta
+    const newRecipe = new recipeModel({
+      title,
+      description,
+      ingredients,
+      category,
+      imageURL,
+      createdBy: idUser
+    });
+
+    await newRecipe.save();
+
+    res.status(201).json({
+      status: "Success",
+      message: "Receta creada exitosamente",
+      data: newRecipe
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "Failed",
+      message: error.message
+    });
+  }
+};
+
+const updateRecipes = async (req, res) => {
+  try {
+    const idUser = req.payload._id;
+    const { idRecipes } = req.params;
+    const { title, description, ingredients, category, imageURL } = req.body;
+
+    // Buscar usuario
+    const user = await userModel.findById(idUser);
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // Buscar la receta existente
+    const recipe = await recipeModel.findById(idRecipes);
+    if (!recipe) {
+      return res.status(404).json({ message: "Receta no encontrada" });
+    }
+
+    // Actualizar la receta con los datos proporcionados
+    recipe.title = title || recipe.title;
+    recipe.description = description || recipe.description;
+    recipe.ingredients = ingredients || recipe.ingredients;
+    recipe.category = category || recipe.category;
+    recipe.imageURL = imageURL || recipe.imageURL;
+
+    await recipe.save();
+
+    res.status(200).json({
+      status: "Success",
+      message: "Receta actualizada correctamente",
+      data: recipe
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "Failed",
+      message: error.message
+    });
+  }
+};
+
+const removeRecipes = async (req, res) => {
+  try {
+    const idUser = req.payload._id;
+    const { idRecipes } = req.params;
+
+    // Buscar usuario
+    const user = await userModel.findById(idUser);
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // Buscar y eliminar la receta
+    const recipe = await recipeModel.findByIdAndDelete(idRecipes);
+    if (!recipe) {
+      return res.status(404).json({ message: "Receta no encontrada" });
+    }
+
+    res.status(200).json({
+      status: "Success",
+      message: "Receta eliminada correctamente",
+      data: recipe
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "Failed",
+      message: error.message
+    });
+  }
+};
 
 module.exports = {
     addRecipe,
     getAllRecipe,
     getByIdRecipe,
     getRecentRecipe,
-    getPopularRecipe
-    
+    getPopularRecipe,
+    addRecipes,
+    updateRecipes,
+    removeRecipes
 }

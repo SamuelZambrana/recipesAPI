@@ -1,6 +1,29 @@
 const userModel = require('../models/userModel');
 const bcrypt = require('bcrypt');
 const generateToken = require('../utils/auth.token');
+const { sendEmail } = require('../service/email.Services');
+
+ 
+const signup = async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+        const newUser = {
+            name,
+            email,
+            password: await bcrypt.hash(password, 10)
+        }
+        await userModel.create(newUser);
+
+        const to = email;
+        const subject = 'Bienvenido a nuestra App';
+        const html = `<h3>Hola ${name}, gracias por registrarte en nuestra aplicacion</h3>`
+
+        await sendEmail(to, subject, html)
+        res.status(200).send({status: "Success", data: newUser});
+    } catch (error) {
+      res.status(500).send({ status: "Failed", error: error.message });
+    }
+}
 
 const login = async (req, res) => {
     try {
@@ -33,7 +56,26 @@ const login = async (req, res) => {
     }
   };
 
+
+  const getTokens = async (req, res) => {
+    try {
+      const payload = {
+        _id: req.payload._id,
+        name: req.payload.name,
+        role: req.payload.role,
+      };
+      const token = generateToken(payload, false);
+      const token_refresh = generateToken(payload, true);
+      res.status(200).send({ status: "Success", token, token_refresh });
+    } catch (error) {
+      res.status(500).send({ status: "Failed", error: error.message });
+    }
+  };
+
+
   module.exports = {
-    login
+    login,
+    getTokens,
+    signup
       
   }

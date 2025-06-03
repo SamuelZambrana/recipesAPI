@@ -1,7 +1,23 @@
 const mongoose = require("mongoose");
-
 // Nos traemos todos los esquemas y lo guardamos en la cosntante
 const Schema = mongoose.Schema;
+
+const commentSchema = new Schema({
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
+  comments: {
+    type: String,
+    required: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
 
 const recipeSchema = new Schema({
   title: {
@@ -31,7 +47,12 @@ const recipeSchema = new Schema({
   creationDate: {
        type: Date,
        default: Date.now,
-    }
+    },
+  comments: [commentSchema],
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
  
