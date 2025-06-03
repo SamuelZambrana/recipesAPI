@@ -28,7 +28,7 @@ const userSchema = new Schema({
   },
    createdBy: { 
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User" } // Nueva referencia
+    ref: "Recipes" } // Nueva referencia
  
 });
 
