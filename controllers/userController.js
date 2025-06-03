@@ -1,7 +1,7 @@
 const userModel = require('../models/userModel');
 const recipeModel = require('../models/recipesModel')
 const bcrypt = require('bcrypt');
-
+const { sendEmail } = require('../service/email.Services');
 
 const addUser = async (req, res) => {
     try {
@@ -168,7 +168,53 @@ const updateMyProfile = async (req, res) => {
   }
 };
 
+const addlikeRecipes = async (req, res) => {
+  try {
+    const { idRecipes } = req.params;
+    const idUser = req.payload._id;
 
+    // Buscar usuario
+    const user = await userModel.findById(idUser);
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // Buscar receta
+    const recipe = await recipeModel.findById(idRecipes);
+    if (!recipe) {
+      return res.status(404).json({ message: "Receta no encontrada" });
+    }
+
+    // Evitar que el usuario dé like varias veces
+    if (recipe.likes.includes(idUser)) {
+        return res.status(400).json({ success: false, message: 'Ya diste like a esta receta' });
+    }
+
+    // Agregar el like
+    recipe.likes.push(idUser);
+    await recipe.save();
+
+    // Obtener el creador de la receta (debe ser `createdBy`, no `createdAt`)
+    const creator = await userModel.findById(recipe.createdBy);
+    if (!creator) {
+      return res.status(404).json({ success: false, message: "No se pudo encontrar el creador de la receta" });
+    }
+
+    //Redactamos el correo hacia el creador de la receta que reciba un like
+    const to = creator.email;
+    const subject = 'Tu Receta Ha recibido un nuevoLike';
+    const html = `Hola ${creator.name}, tu receta "${recipe.name}" acaba de recibir un nuevo like. ¡Sigue compartiendo tus deliciosas creaciones!`
+    
+    await sendEmail(to, subject, html)
+      
+    res.status(200).json({ success: true, message: 'Like añadido y notificación enviada' });
+
+    } catch (error) {
+        console.error('Error al procesar el like:', error);
+        res.status(500).json({ success: false, message: 'Error del servidor' });
+    }
+
+};
 
 
 module.exports = {
@@ -177,6 +223,7 @@ module.exports = {
   addFavouriteRecipes,
   removeFavouriteRecipe,
   addCommentRecipe,
-  updateMyProfile
+  updateMyProfile,
+  addlikeRecipes
     
 }

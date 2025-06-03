@@ -7,7 +7,8 @@ const {
     addFavouriteRecipes,
     removeFavouriteRecipe,
     addCommentRecipe,
-    updateMyProfile
+    updateMyProfile,
+    addlikeRecipes
 
 } = require('../controllers/userController');
 const { verifyToken, verifyAdmin }= require('../middlewares/auth');
@@ -19,6 +20,7 @@ router.patch('/addFavourites/:idRecipes', verifyToken, addFavouriteRecipes);
 router.patch('/removefavourites/:idRecipes', verifyToken, removeFavouriteRecipe);
 router.post('/:idRecipes/addComments/:idUser', verifyToken, addCommentRecipe)
 router.patch('/myProfile', verifyToken, verifyAdmin, updateMyProfile);
+router.post('/addLike/:idRecipes', verifyToken, addlikeRecipes);
 
 
 

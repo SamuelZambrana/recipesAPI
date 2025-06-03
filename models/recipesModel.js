@@ -53,6 +53,9 @@ const recipeSchema = new Schema({
     type: Date,
     default: Date.now,
   },
+  createdBy: { 
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User" } // Nueva referencia
 });
 
  
